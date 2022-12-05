@@ -9,9 +9,10 @@ const input = readFile(getFile('input.txt', import.meta.url))
       .reduce((acc, curr) => acc + curr, 0)
   )
 
-const firstMax = Math.max(...input)
-const excludeFirst = input.filter((val) => val !== firstMax)
-const secondMax = Math.max(...excludeFirst)
-const excludeSecond = excludeFirst.filter((val) => val !== secondMax)
-const thirdMax = Math.max(...excludeSecond)
-console.log('day1', 'solutions:', firstMax, firstMax + secondMax + thirdMax)
+const sortedInput = input.sort((a, b) => a - b).reverse()
+console.log(
+  'day1',
+  'solutions:',
+  sortedInput[0],
+  sortedInput[0] + sortedInput[1] + sortedInput[2]
+)

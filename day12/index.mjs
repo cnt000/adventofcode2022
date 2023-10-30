@@ -21,23 +21,25 @@ const findChar = (input, char) => {
 }
 
 let resultBFS = Infinity
+let resultDFS = Infinity
+
+const startCoord = findChar(input, 'S')
+const endCoord = findChar(input, 'E')
+const startPos = `${startCoord[0]}:${startCoord[1]}`
+const endPos = `${endCoord[0]}:${endCoord[1]}`
+input[startCoord[0]][startCoord[1]] = 'a'
+input[endCoord[0]][endCoord[1]] = 'z'
+for (let i = 0; i < input.length; i++) {
+  // let row = ''
+  for (let j = 0; j < input[i].length; j++) {
+    input[i][j] = input[i][j].charCodeAt()
+    // row += `${input[i][j]} `.padStart(4, ' ')
+  }
+  // console.log(row)
+}
 
 const part1 = () => {
   const dict = {}
-  const startCoord = findChar(input, 'S')
-  const endCoord = findChar(input, 'E')
-  const startPos = `${startCoord[0]}:${startCoord[1]}`
-  const endPos = `${endCoord[0]}:${endCoord[1]}`
-  input[startCoord[0]][startCoord[1]] = 'a'
-  input[endCoord[0]][endCoord[1]] = 'z'
-  for (let i = 0; i < input.length; i++) {
-    let row = ''
-    for (let j = 0; j < input[i].length; j++) {
-      input[i][j] = input[i][j].charCodeAt()
-      row += `${input[i][j]} `.padStart(4, ' ')
-    }
-    console.log(row)
-  }
 
   for (let i = 0; i < input.length; i++) {
     for (let j = 0; j < input[i].length; j++) {
@@ -62,14 +64,14 @@ const part1 = () => {
       }
     }
   }
-  const resultDFS = DFS(dict, startPos, [startPos], endPos)
-  BFS(dict, startPos, [startPos], endPos)
-  return [resultDFS, resultBFS]
+  DFS(dict, startPos, [startPos], endPos)
+  BFS(dict, startPos, endPos)
 }
 
 const DFS = (graph, node, steps, end) => {
-  if (node === end && steps.length < resultBFS) {
-    resultBFS = steps.length - 1
+  if (node === end && steps.length < resultDFS) {
+    resultDFS = steps.length - 1
+    return
   }
   for (let i = 0; i < graph[node].length; i++) {
     const next = graph[node][i]
@@ -88,7 +90,6 @@ const BFS = (graph, start, end) => {
 
   while (queue.length) {
     const [node, distance] = queue.shift()
-    console.log(graph[node])
     for (let i = 0; i < graph[node].length; i++) {
       const next = graph[node][i]
       if (!visited.find((x) => x === next)) {
@@ -96,11 +97,13 @@ const BFS = (graph, start, end) => {
         queue.push([next, distance + 1])
       }
       if (next === end) {
-        return distance + 1
+        resultBFS = distance + 1
+        return
       }
     }
   }
 }
-const [, resultDFS] = part1()
+
+part1()
 console.log('day12', 'solutions BFS:', resultBFS)
 console.log('day12', 'solutions DFS:', resultDFS)

@@ -1,7 +1,10 @@
 import { readFile, getFile } from '../lib/file.mjs'
 
+const isTestInput = process.argv[2] === '-test'
+const inputFile = isTestInput ? 'input.txt' : 'input-big.txt'
+
 const input = [
-  ...readFile(getFile('input.txt', import.meta.url))
+  ...readFile(getFile(inputFile, import.meta.url))
     .split('\n')
     .map((line) => line.split(''))
 ]
@@ -17,96 +20,87 @@ const findChar = (input, char) => {
   }
 }
 
-const pd = []
+let resultBFS = Infinity
 
 const part1 = () => {
   const dict = {}
-  // cerca la S e parti da quella posizione
   const startCoord = findChar(input, 'S')
   const endCoord = findChar(input, 'E')
-  const startPos = `${startCoord[0]}${startCoord[1]}`
-  const endPos = `${endCoord[0]}${endCoord[1]}`
-  // console.log('🚀 ~ file: index.mjs:25 ~ part1 ~ endCoord:', endPos)
-  // sostiuiscila con la 'a'
+  const startPos = `${startCoord[0]}:${startCoord[1]}`
+  const endPos = `${endCoord[0]}:${endCoord[1]}`
   input[startCoord[0]][startCoord[1]] = 'a'
-  // sostiuiscila con la '{' (value 123, la z ha valore 122)
-  input[endCoord[0]][endCoord[1]] = '{'
-  // per ogni posizione partendo da S
+  input[endCoord[0]][endCoord[1]] = 'z'
+  for (let i = 0; i < input.length; i++) {
+    let row = ''
+    for (let j = 0; j < input[i].length; j++) {
+      input[i][j] = input[i][j].charCodeAt()
+      row += `${input[i][j]} `.padStart(4, ' ')
+    }
+    console.log(row)
+  }
+
   for (let i = 0; i < input.length; i++) {
     for (let j = 0; j < input[i].length; j++) {
-      const pos = `${i}${j}`
-      dict[pos] = []
+      const pos = `${i}:${j}`
       const currVal = input[i][j]
-      // guarda sinistra, destra, sopra, sotto
+      dict[pos] = []
       const l = input?.[i]?.[j - 1]
       const r = input?.[i]?.[j + 1]
       const d = input?.[i + 1]?.[j]
       const u = input?.[i - 1]?.[j]
-      // se uno di questi valori e' uguale o superiore di 1 del current value
-      // aggiungi la posizione al dizionario { '00': ['10'] }
-      // se incontri le E maiuscola marcala in qualche modo come END
-      if (
-        currVal.charCodeAt(0) === l?.charCodeAt(0) ||
-        currVal.charCodeAt(0) + 1 === l?.charCodeAt(0)
-      ) {
-        dict[pos].push(`${i}${j - 1}`)
+      if (l && currVal + 1 >= l) {
+        dict[pos].push(`${[i]}:${[j - 1]}`)
       }
-      if (
-        currVal.charCodeAt(0) === r?.charCodeAt(0) ||
-        currVal.charCodeAt(0) + 1 === r?.charCodeAt(0)
-      ) {
-        dict[pos].push(`${i}${j + 1}`)
+      if (r && currVal + 1 >= r) {
+        dict[pos].push(`${[i]}:${[j + 1]}`)
       }
-      if (
-        currVal.charCodeAt(0) === u?.charCodeAt(0) ||
-        currVal.charCodeAt(0) + 1 === u?.charCodeAt(0)
-      ) {
-        dict[pos].push(`${i - 1}${j}`)
+      if (u && currVal + 1 >= u) {
+        dict[pos].push(`${[i - 1]}:${[j]}`)
       }
-      if (
-        currVal.charCodeAt(0) === d?.charCodeAt(0) ||
-        currVal.charCodeAt(0) + 1 === d?.charCodeAt(0)
-      ) {
-        dict[pos].push(`${i + 1}${j}`)
+      if (d && currVal + 1 >= d) {
+        dict[pos].push(`${[i + 1]}:${[j]}`)
       }
     }
   }
-  // stampa dizionario di vertici di adiacenza
-  console.log(dict)
-  // applica BFS o dijstra al dizionario
-  // DFS(dict, startPos, [startPos], endPos)
-  console.log(pd)
+  const resultDFS = DFS(dict, startPos, [startPos], endPos)
+  BFS(dict, startPos, [startPos], endPos)
+  return [resultDFS, resultBFS]
 }
-const visited = []
 
-const DFS = (graph, node, steps, endPos) => {
-  if (node === endPos) {
-    // console.log('steps:', steps, steps.length)
-    pd.push(steps)
-    return steps
+const DFS = (graph, node, steps, end) => {
+  if (node === end && steps.length < resultBFS) {
+    resultBFS = steps.length - 1
   }
-  // esamina il nodo u e marcalo visitato -> se li scorro tutti non serve Object.keys
-  // Object.keys(graph).forEach((pos) => {
-  visited.push(node)
-  // console.log('visited:', visited)
-  //   // per ogni vettore adiacente a node => il valore di quella chiave che sto scorrendo con Object.keys
-  graph[node].forEach((adj) => {
-    // esamina l'arco node -> vettore adiacente
-    let updatedSteps = steps
-    if (!steps.includes(adj)) {
-      updatedSteps.push(adj)
-      // console.log(updatedSteps)
-      // se il vettore adiacente non e' marcato visitato DFS(graph, nodo dove punta il vettore adiacente)
-      // console.log(adj + ' -> ' + updatedSteps)
-      if (!visited.includes(adj)) {
-        DFS(graph, adj, updatedSteps, endPos)
+  for (let i = 0; i < graph[node].length; i++) {
+    const next = graph[node][i]
+    if (!steps.find((step) => step === next) && steps.length < resultBFS) {
+      DFS(graph, next, [...steps, next], end)
+    }
+  }
+}
+
+const BFS = (graph, start, end) => {
+  const queue = []
+  queue.push([start, 0])
+
+  const visited = []
+  visited.push(start)
+
+  while (queue.length) {
+    const [node, distance] = queue.shift()
+    console.log(graph[node])
+    for (let i = 0; i < graph[node].length; i++) {
+      const next = graph[node][i]
+      if (!visited.find((x) => x === next)) {
+        visited.push(next)
+        queue.push([next, distance + 1])
+      }
+      if (next === end) {
+        return distance + 1
       }
     }
-  })
-  console.log(' - - - - -')
-  // })
+  }
 }
-
-// console.log(findS(input))
-// console.log('day11', 'solutions:', part1())
-part1()
+const [, resultDFS] = part1()
+console.log('day12', 'solutions BFS:', resultBFS)
+console.log('day12', 'solutions DFS:', resultDFS)
